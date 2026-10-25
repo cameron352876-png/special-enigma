@@ -1,0 +1,41 @@
+name: Build AdGuard DNS filter
+
+on:
+  push:
+  schedule:
+    - cron: '0 */2 * * *' # Every 2nd hour
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: 24
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: yarn
+        run: |
+          yarn install
+          yarn run build
+
+      - name: prepare deploy
+        run: |
+          mkdir build
+          cp -rf Filters build/
+        env:
+          CI: true
+
+      - name: deploy
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/master'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build
